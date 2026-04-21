@@ -117,18 +117,27 @@ canvas{display:block;}
 .ev-row{display:grid;grid-template-columns:70px 1fr 80px 80px 28px;gap:5px;align-items:center;margin-bottom:4px;}
 .ev-row input,.ev-row select{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px;outline:none;width:100%;}
 
-/* account input rows */
-.ai-hdr{display:grid;grid-template-columns:2fr 56px 56px 56px 58px;gap:4px;margin-bottom:5px;}
+/* account input rows — grid-template-columns set dynamically via JS */
+.ai-hdr{display:grid;gap:4px;margin-bottom:5px;}
 .ai-hdr span{font-size:10px;color:var(--muted);text-align:right;}
 .ai-hdr span:first-child{text-align:left;}
-.ai-row{display:grid;grid-template-columns:2fr 56px 56px 56px 58px;gap:4px;margin-bottom:3px;align-items:center;}
+.ai-row{display:grid;gap:4px;margin-bottom:3px;align-items:center;}
 .ai-row input{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:3px 5px;outline:none;width:100%;text-align:right;}
+.ai-row input.inst-input{text-align:left;color:var(--dim);}
 .ai-row input:focus{border-color:var(--accent);}
 .ai-total{font-size:11px;text-align:right;padding:3px 2px;}
 .ai-cat{font-size:10px;letter-spacing:.8px;color:var(--dim);text-transform:uppercase;margin:9px 0 3px;border-top:1px solid var(--border);padding-top:7px;font-weight:500;}
-.ai-cat-total{display:grid;grid-template-columns:2fr 56px 56px 56px 58px;gap:4px;margin:3px 0 2px;padding:3px 0;border-top:1px dashed rgba(42,45,62,.5);}
+.ai-cat-total{display:grid;gap:4px;margin:3px 0 2px;padding:3px 0;border-top:1px dashed rgba(42,45,62,.5);}
 .ai-cat-total span{font-size:10px;text-align:right;color:var(--dim);}
-.ai-cat-total span:first-child{color:var(--dim);font-size:10px;}
+.ai-cat-total span:first-child{color:var(--dim);font-size:10px;text-align:left;}
+/* person management */
+.person-chip{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:6px;}
+.person-chip input{background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:2px 4px;outline:none;width:140px;}
+.person-chip input:focus{border-bottom-color:var(--accent);}
+.person-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+/* per-category add button */
+.btn-add-cat{background:transparent;color:var(--accent2);border:1px dashed rgba(122,162,247,.35);border-radius:4px;padding:5px 12px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;width:100%;margin-top:6px;transition:all .2s;text-align:left;letter-spacing:.5px;}
+.btn-add-cat:hover{background:rgba(122,162,247,.08);border-color:var(--accent2);}
 
 /* toast */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--text);z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
@@ -136,7 +145,6 @@ canvas{display:block;}
 .toast.ok{border-color:var(--green);color:var(--green);}
 .toast.err{border-color:var(--red);color:var(--red);}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <header>
@@ -146,15 +154,7 @@ canvas{display:block;}
   </div>
   <div class="header-actions">
     <button class="hbtn hbtn-danger" onclick="confirmReset()">↺ Reset</button>
-    <button class="hbtn hbtn-blue" onclick="loadXlsxFromDrive()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Load from Excel
-    </button>
-    <button class="hbtn hbtn-gdrive" onclick="saveToDrive()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3l5.72 9.9-5.67 9.82L.61 12.9zm11.44 0L24 12.9l-5.67 9.82-6.11-10.58zm.72 19.72H5.56L2.56 17h18.88z"/></svg>
-      Save to Drive
-    </button>
-    <button class="hbtn hbtn-accent" onclick="downloadJSON()">⬇ Download</button>
+    <button class="hbtn hbtn-accent" onclick="downloadHTML()">⬇ Download</button>
   </div>
 </header>
 <div class="tabs">
@@ -163,8 +163,6 @@ canvas{display:block;}
   <div class="tab"         data-tab="retinputs"   onclick="showTab('retinputs')">Retirement Inputs</div>
 </div>
 <div id="toast" class="toast"></div>
-<input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileLoad(event)">
-<input type="file" id="xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="handleXlsxLoad(event)">
 
 <!-- ══════════════════ DASHBOARD ══════════════════ -->
 <div id="tab-dashboard" class="panel active">
