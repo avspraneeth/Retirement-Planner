@@ -302,211 +302,165 @@ canvas{display:block;}
 
 <script>
 // ═══════════════════════════════════════
-// ACCOUNT DATA
+// DATA MODEL
 // ═══════════════════════════════════════
-const ACCTS=[
-  {cat:'Cash in Hand',inst:'SBI (Bank)',                p:0.25,  s:1,     c:0   },
-  {cat:'Cash in Hand',inst:'ICICI (Bank)',               p:1.25,  s:0.75,  c:0.25},
-  {cat:'Cash in Hand',inst:'Axis Bank',                  p:0.25,  s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'Andhra Bank',                p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'PNB',                        p:0,     s:0.25,  c:0   },
-  {cat:'Cash in Hand',inst:'SBM (IndMoney)',             p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'Indian Bank',                p:0.25,  s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'SBI Elite (CC)',             p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'ICICI MMT (CC)',             p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'ICICI HPCL (CC)',            p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'HSBC Travel One (CC)',       p:0,     s:0.5,   c:0   },
-  {cat:'Cash in Hand',inst:'Amex Platinum Reserve (CC)', p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'IndusInd Avios (S) (CC)',    p:0,     s:-1.25, c:0   },
-  {cat:'Cash in Hand',inst:'IndusInd Avios (P) (CC)',    p:-0.25, s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'BOBCard Etihad Guest (CC)',  p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'Axis Vistara (CC)',          p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'Axis Atlas (CC)',            p:-1,    s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'ICICI Emirates (CC)',        p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'ICICI Times Black (CC)',     p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'HDFC Tata Neu Infinity (CC)',p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'HDFC Marriott Bonvoy (CC)',  p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'Amex Platinum Travel (CC)',  p:0,     s:0,     c:0   },
-  {cat:'Cash in Hand',inst:'Personal Loan',              p:-6.25, s:0,     c:0   },
-  {cat:'Short-Term Savings',inst:'SBI FD/RD',            p:0.25,  s:0,     c:0   },
-  {cat:'Short-Term Savings',inst:'Axis Bank FD/RD',      p:0.5,   s:0,     c:0   },
-  {cat:'Short-Term Savings',inst:'ICICI FD/RD',          p:0.75,  s:1.5,   c:2   },
-  {cat:'Long-Term Savings', inst:'Mutual Funds',         p:25,    s:20,    c:0   },
-  {cat:'Long-Term Savings', inst:'Equity — India',       p:21,    s:9,     c:0   },
-  {cat:'Long-Term Savings', inst:'Equity — US',          p:5,     s:0,     c:0   },
-  {cat:'Long-Term Savings', inst:'ULIP Tata AIA',        p:8.5,   s:0,     c:0   },
-  {cat:'Long-Term Savings', inst:'ULIP ICICI',           p:12,    s:8.75,  c:0   },
-  {cat:'Retirement Savings',inst:'NPS / NSDL / EPF',     p:53,    s:55.5,  c:0   },
-  {cat:'Retirement Savings',inst:'PPF (SBI / ICICI)',    p:19,    s:13,    c:0   },
-  {cat:'Retirement Savings',inst:'SSY (ICICI)',          p:0,     s:0,     c:6.5 },
-];
-
-let accts=ACCTS.map(r=>({...r}));
-
+const PERSON_COLORS=['#7aa2f7','#9ece6a','#e0af68','#bb9af7','#f7768e','#73daca'];
 const CAT_ORDER=['Cash in Hand','Short-Term Savings','Long-Term Savings','Retirement Savings'];
 const CAT_CLS={'Cash in Hand':'cat-cash','Short-Term Savings':'cat-st','Long-Term Savings':'cat-lt','Retirement Savings':'cat-ret'};
-
-let events=[
-  {age:51,desc:"Chaitra — 11th/12th Education",cost:2,  phase:'pre'},
-  {age:52,desc:"Chaitra — Undergrad Yr 1",     cost:10, phase:'pre'},
-  {age:53,desc:"Chaitra — Undergrad Yr 2",     cost:10, phase:'pre'},
-  {age:54,desc:"Chaitra — Undergrad Yr 3",     cost:10, phase:'pre'},
-  {age:55,desc:"Chaitra — Undergrad Yr 4",     cost:10, phase:'pre'},
-  {age:56,desc:"Chaitra — Grad School Yr 1",   cost:25, phase:'pre'},
-  {age:57,desc:"Chaitra — Grad School Yr 2",   cost:25, phase:'pre'},
-  {age:60,desc:"Medical Emergency",            cost:10, phase:'pre'},
-  {age:65,desc:"House — Gift / Payoff",        cost:250,phase:'post'},
-  {age:70,desc:"Medical Emergency",            cost:15, phase:'post'},
-  {age:80,desc:"Medical Emergency",            cost:20, phase:'post'},
-];
+const CAT_PANEL={'Cash in Hand':'a','Short-Term Savings':'b','Long-Term Savings':'c','Retirement Savings':'d'};
+const CAT_MAX=25;
+let persons=[{id:0,name:'Person 1'}];
+let nextPersonId=1;
+let accts=[];
+let nextAcctId=0;
+let events=[];
 
 // ═══════ HELPERS ═══════
-function fv(v){
-  if(!v&&v!==0)return'—';
-  const a=Math.abs(v);
-  return v<0?`<span class="neg">(${a.toFixed(2)})</span>`:a===0?'—':a.toFixed(2);
-}
+function fv(v){if(!v&&v!==0)return'—';const a=Math.abs(v);return v<0?`<span class="neg">(${a.toFixed(2)})</span>`:a===0?'—':a.toFixed(2);}
 function fL(v){return'₹'+v.toFixed(2)+' L';}
-function toast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast show '+(type==='err'?'err':'ok');
-  setTimeout(()=>t.className='toast',2800);
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type==='err'?'err':'ok');setTimeout(()=>t.className='toast',2800);}
+function personColor(idx){return PERSON_COLORS[idx%PERSON_COLORS.length];}
+function acctGridTemplate(){return'2fr '+persons.map(()=>'68px').join(' ')+' 60px 28px';}
+
+// ═══════ PARAMS ═══════
+function applyParams(p){
+  const ids={age:'in-age',retAge:'in-ret-age',life:'in-life',inflation:'in-inflation',retReturn:'in-ret-return',postReturn:'in-post-return',annSave:'in-ann-save',saveGrow:'in-save-grow',spend:'in-spend',spendFactor:'in-spend-factor',house:'in-house'};
+  Object.keys(ids).forEach(k=>{const el=document.getElementById(ids[k]);if(el&&p[k]!==undefined)el.value=p[k];});
+}
+
+// ═══════ PERSONS ═══════
+function buildPersonsUI(){
+  const el=document.getElementById('persons-ui');
+  el.innerHTML='';
+  persons.forEach((person,idx)=>{
+    const chip=document.createElement('div');
+    chip.className='person-chip';
+    const del=persons.length>1?`<button class="btn-del" onclick="removePerson(${person.id})">✕</button>`:'';
+    chip.innerHTML=`<span class="person-color-dot" style="background:${personColor(idx)}"></span>
+      <input type="text" value="${person.name.replace(/"/g,'&quot;')}" oninput="persons.find(x=>x.id===${person.id}).name=this.value;buildAllAcctHeaders();buildPersonKPIs();buildCatTable();">${del}`;
+    el.appendChild(chip);
+  });
+}
+function addPerson(name){
+  if(persons.length>=6){toast('Maximum 6 people','err');return;}
+  const newId=nextPersonId++;
+  persons.push({id:newId,name:name||'Person '+(persons.length+1)});
+  accts.forEach(a=>{if(a.vals[newId]===undefined)a.vals[newId]=0;});
+  buildPersonsUI();buildAllAcctHeaders();buildAllAcctRows();refreshAll();
+}
+function removePerson(id){
+  if(persons.length<=1){toast('Cannot remove last person','err');return;}
+  persons=persons.filter(p=>p.id!==id);
+  accts.forEach(a=>delete a.vals[id]);
+  buildPersonsUI();buildAllAcctHeaders();buildAllAcctRows();refreshAll();
 }
 
 // ═══════ ACCOUNT INPUTS ═══════
-function buildAIRows(){
-  const partA=accts.filter(r=>r.cat==='Cash in Hand');
-  const partB=accts.filter(r=>r.cat!=='Cash in Hand');
-  fillAIPanel(document.getElementById('ai-rows-a'),partA,0);
-  fillAIPanel(document.getElementById('ai-rows-b'),partB,partA.length);
-}
-
-function fillAIPanel(el,rows,offset){
-  el.innerHTML='';
-  let lastCat='';
-  let catBuf=[];   // buffer rows for current cat to emit subtotal after
-  let catStart=0;
-
-  function flushCatTotal(cat,buf,off){
-    if(buf.length===0)return;
-    let cp=0,cs=0,cc=0;
-    buf.forEach(({localIdx})=>{
-      const i=localIdx+off;
-      cp+=(parseFloat(document.getElementById('ap-'+i)?.value)||0);
-      cs+=(parseFloat(document.getElementById('as-'+i)?.value)||0);
-      cc+=(parseFloat(document.getElementById('ac-'+i)?.value)||0);
-    });
-    // subtotal row — we'll use stored values from rows array instead
-    let sp=0,ss=0,sc=0;
-    buf.forEach(({row})=>{sp+=row.p;ss+=row.s;sc+=row.c;});
-    const st=sp+ss+sc;
-    const d=document.createElement('div');
-    d.className='ai-cat-total';
-    d.id='catTotal-'+cat.replace(/\s/g,'-');
-    const tc=st<0?'var(--red)':st>0?'var(--accent)':'var(--muted)';
-    d.innerHTML=`<span style="color:var(--dim);font-size:10px;">${cat} Total</span>
-      <span style="color:var(--dim)">${sp.toFixed(2)}</span>
-      <span style="color:var(--dim)">${ss.toFixed(2)}</span>
-      <span style="color:var(--dim)">${sc.toFixed(2)}</span>
-      <span style="color:${tc};font-weight:500">${st.toFixed(2)}</span>`;
-    el.appendChild(d);
-  }
-
-  rows.forEach((row,localIdx)=>{
-    if(row.cat!==lastCat){
-      if(lastCat!=='') flushCatTotal(lastCat,catBuf,offset);
-      catBuf=[];
-      const h=document.createElement('div');
-      h.className='ai-cat';
-      h.textContent=row.cat;
-      el.appendChild(h);
-      lastCat=row.cat;
-    }
-    catBuf.push({row,localIdx});
-    const i=localIdx+offset;
-    const tot=row.p+row.s+row.c;
-    const tc=tot<0?'var(--red)':tot>0?'var(--accent2)':'var(--muted)';
-    const d=document.createElement('div');
-    d.className='ai-row';
-    d.innerHTML=`<span style="font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${row.inst}">${row.inst}</span>
-      <input type="number" step="0.25" value="${row.p}" id="ap-${i}" onchange="liveRecalc()">
-      <input type="number" step="0.25" value="${row.s}" id="as-${i}" onchange="liveRecalc()">
-      <input type="number" step="0.25" value="${row.c}" id="ac-${i}" onchange="liveRecalc()">
-      <span class="ai-total" id="at-${i}" style="color:${tc}">${tot.toFixed(2)}</span>`;
-    el.appendChild(d);
-  });
-  if(lastCat!=='') flushCatTotal(lastCat,catBuf,offset);
-}
-
-function rebuildCatTotals(){
-  // Recompute category totals after live edits
-  const catSums={};
-  accts.forEach((row,i)=>{
-    if(!catSums[row.cat])catSums[row.cat]={p:0,s:0,c:0};
-    catSums[row.cat].p+=row.p;
-    catSums[row.cat].s+=row.s;
-    catSums[row.cat].c+=row.c;
-  });
-  Object.keys(catSums).forEach(cat=>{
-    const el=document.getElementById('catTotal-'+cat.replace(/\s/g,'-'));
+function buildAllAcctHeaders(){
+  const tmpl=acctGridTemplate();
+  ['a','b','c','d'].forEach(panel=>{
+    const el=document.getElementById('ai-hdr-'+panel);
     if(!el)return;
-    const {p,s,c}=catSums[cat];
-    const t=p+s+c;
-    const tc=t<0?'var(--red)':t>0?'var(--accent)':'var(--muted)';
-    const spans=el.querySelectorAll('span');
-    if(spans[1])spans[1].textContent=p.toFixed(2);
-    if(spans[2])spans[2].textContent=s.toFixed(2);
-    if(spans[3])spans[3].textContent=c.toFixed(2);
-    if(spans[4]){spans[4].textContent=t.toFixed(2);spans[4].style.color=tc;}
+    el.style.gridTemplateColumns=tmpl;
+    el.innerHTML='<span>Institution</span>'+persons.map(p=>`<span style="text-align:right">${p.name}</span>`).join('')+'<span style="text-align:right">Total</span><span></span>';
   });
 }
-
-function liveRecalc(){
-  accts.forEach((row,i)=>{
-    row.p=parseFloat(document.getElementById('ap-'+i)?.value)||0;
-    row.s=parseFloat(document.getElementById('as-'+i)?.value)||0;
-    row.c=parseFloat(document.getElementById('ac-'+i)?.value)||0;
-    const tot=row.p+row.s+row.c;
-    const el=document.getElementById('at-'+i);
-    if(el){el.textContent=tot.toFixed(2);el.style.color=tot<0?'var(--red)':tot>0?'var(--accent2)':'var(--muted)';}
+function buildAllAcctRows(){CAT_ORDER.forEach(cat=>buildCatAcctRows(cat));}
+function buildCatAcctRows(cat){
+  const panel=CAT_PANEL[cat];
+  const el=document.getElementById('ai-rows-'+panel);
+  if(!el)return;
+  el.innerHTML='';
+  const tmpl=acctGridTemplate();
+  const catAccts=accts.filter(a=>a.cat===cat);
+  catAccts.forEach(acct=>{
+    const row=document.createElement('div');
+    row.className='ai-row';
+    row.style.gridTemplateColumns=tmpl;
+    const pins=persons.map(p=>`<input type="number" step="0.25" value="${(acct.vals[p.id]||0).toFixed(2)}" oninput="liveRecalcAcct(${acct.id},${p.id},this.value)">`).join('');
+    const tot=persons.reduce((s,p)=>s+(acct.vals[p.id]||0),0);
+    const tc=tot<0?'var(--red)':tot>0?'var(--accent2)':'var(--muted)';
+    row.innerHTML=`<input type="text" class="inst-input" value="${acct.inst.replace(/"/g,'&quot;')}" oninput="instChange(${acct.id},this.value)">${pins}<span class="ai-total" id="at-${acct.id}" style="color:${tc}">${tot.toFixed(2)}</span><button class="btn-del" onclick="removeAcct(${acct.id})">✕</button>`;
+    el.appendChild(row);
   });
-  rebuildCatTotals();
+  if(catAccts.length>0){
+    const sub=document.createElement('div');
+    sub.className='ai-cat-total';
+    sub.id='catTotal-'+cat.replace(/\s/g,'-');
+    renderCatSubtotal(sub,cat,catAccts);
+    el.appendChild(sub);
+  }
+}
+function renderCatSubtotal(el,cat,catAccts){
+  const tmpl=acctGridTemplate();
+  el.style.gridTemplateColumns=tmpl;
+  const psums=persons.map(p=>catAccts.reduce((s,a)=>s+(a.vals[p.id]||0),0));
+  const grand=psums.reduce((s,v)=>s+v,0);
+  const tc=grand<0?'var(--red)':grand>0?'var(--accent)':'var(--muted)';
+  el.innerHTML='<span>Total</span>'+psums.map(v=>`<span>${v.toFixed(2)}</span>`).join('')+`<span style="color:${tc};font-weight:500">${grand.toFixed(2)}</span><span></span>`;
+}
+function updateCatSubtotal(cat){
+  const el=document.getElementById('catTotal-'+cat.replace(/\s/g,'-'));
+  if(el)renderCatSubtotal(el,cat,accts.filter(a=>a.cat===cat));
+}
+function addAcct(cat){
+  if(accts.filter(a=>a.cat===cat).length>=CAT_MAX){toast('Max '+CAT_MAX+' entries per category','err');return;}
+  const vals={};persons.forEach(p=>{vals[p.id]=0;});
+  accts.push({id:nextAcctId++,cat,inst:'New Account',vals});
+  buildCatAcctRows(cat);refreshAll();
+}
+function removeAcct(id){
+  const acct=accts.find(a=>a.id===id);if(!acct)return;
+  const cat=acct.cat;
+  accts=accts.filter(a=>a.id!==id);
+  buildCatAcctRows(cat);refreshAll();
+}
+function liveRecalcAcct(acctId,personId,value){
+  const acct=accts.find(a=>a.id===acctId);if(!acct)return;
+  acct.vals[personId]=parseFloat(value)||0;
+  const tot=persons.reduce((s,p)=>s+(acct.vals[p.id]||0),0);
+  const el=document.getElementById('at-'+acctId);
+  if(el){el.textContent=tot.toFixed(2);el.style.color=tot<0?'var(--red)':tot>0?'var(--accent2)':'var(--muted)';}
+  updateCatSubtotal(acct.cat);
   refreshAll();
 }
-function recalcAccounts(){liveRecalc();}
-function buildFullTable(){}
+function instChange(acctId,value){const acct=accts.find(a=>a.id===acctId);if(acct)acct.inst=value;}
 
-// ═══════ CATEGORY TABLE (Dashboard) ═══════
+// ═══════ DASHBOARD ═══════
+function buildPersonKPIs(){
+  const el=document.getElementById('person-kpis');if(!el)return;
+  el.innerHTML='';
+  const grand=accts.reduce((s,a)=>s+persons.reduce((ps,p)=>ps+(a.vals[p.id]||0),0),0);
+  persons.forEach((person,idx)=>{
+    const pTot=accts.reduce((s,a)=>s+(a.vals[person.id]||0),0);
+    const pct=grand?(pTot/grand*100).toFixed(1)+'% of total':'—';
+    const col=personColor(idx);
+    const kpi=document.createElement('div');
+    kpi.className='kpi';
+    kpi.style.borderTop=`2px solid ${col}`;
+    kpi.innerHTML=`<div class="kpi-lbl">${person.name}</div><div class="kpi-val" style="color:${col}">${fL(pTot)}</div><div class="kpi-sub">${pct}</div>`;
+    el.appendChild(kpi);
+  });
+}
 function buildCatTable(){
   const tots={};
-  CAT_ORDER.forEach(c=>{tots[c]={p:0,s:0,c:0};});
-  accts.forEach(r=>{if(tots[r.cat]){tots[r.cat].p+=r.p;tots[r.cat].s+=r.s;tots[r.cat].c+=r.c;}});
-  const tb=document.getElementById('cat-tbody');
-  tb.innerHTML='';
-  let gp=0,gs=0,gc=0;
+  CAT_ORDER.forEach(c=>{tots[c]={};persons.forEach(p=>{tots[c][p.id]=0;});});
+  accts.forEach(a=>{if(tots[a.cat])persons.forEach(p=>{tots[a.cat][p.id]+=(a.vals[p.id]||0);});});
+  document.getElementById('cat-thead').innerHTML=`<tr><th>Category</th>${persons.map(p=>`<th class="r">${p.name}</th>`).join('')}<th class="r">Total</th></tr>`;
+  const tb=document.getElementById('cat-tbody');tb.innerHTML='';
+  const grand={};persons.forEach(p=>{grand[p.id]=0;});let grandTot=0;
   CAT_ORDER.forEach(cat=>{
-    const t=tots[cat],tot=t.p+t.s+t.c;
-    gp+=t.p;gs+=t.s;gc+=t.c;
+    const catTot=persons.reduce((s,p)=>s+tots[cat][p.id],0);
+    persons.forEach(p=>{grand[p.id]+=tots[cat][p.id];});grandTot+=catTot;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span class="cat-badge ${CAT_CLS[cat]}">${cat}</span></td>
-      <td class="r">${t.p.toFixed(2)}</td><td class="r">${t.s.toFixed(2)}</td><td class="r">${t.c.toFixed(2)}</td>
-      <td class="r ${tot<0?'neg':'pos'}">${tot.toFixed(2)}</td>`;
+    tr.innerHTML=`<td><span class="cat-badge ${CAT_CLS[cat]}">${cat}</span></td>${persons.map(p=>`<td class="r">${tots[cat][p.id].toFixed(2)}</td>`).join('')}<td class="r ${catTot<0?'neg':'pos'}">${catTot.toFixed(2)}</td>`;
     tb.appendChild(tr);
   });
-  document.getElementById('cf-p').textContent=gp.toFixed(2);
-  document.getElementById('cf-s').textContent=gs.toFixed(2);
-  document.getElementById('cf-c').textContent=gc.toFixed(2);
-  document.getElementById('cf-t').textContent=(gp+gs+gc).toFixed(2);
-  const tot=gp+gs+gc;
-  document.getElementById('d-total').textContent=fL(tot);
-  document.getElementById('d-p').textContent=fL(gp);
-  document.getElementById('d-s').textContent=fL(gs);
-  document.getElementById('d-c').textContent=fL(gc);
-  document.getElementById('d-p-pct').textContent=tot?(gp/tot*100).toFixed(1)+'% of total':'—';
-  document.getElementById('d-s-pct').textContent=tot?(gs/tot*100).toFixed(1)+'% of total':'—';
-  document.getElementById('d-c-pct').textContent=tot?(gc/tot*100).toFixed(1)+'% of total':'—';
-  const retTot=tots['Retirement Savings'];
-  document.getElementById('in-savings').value=(retTot.p+retTot.s+retTot.c).toFixed(2);
+  document.getElementById('cat-tfoot').innerHTML=`<tr class="total-row"><td>Total</td>${persons.map(p=>`<td class="r">${grand[p.id].toFixed(2)}</td>`).join('')}<td class="r">${grandTot.toFixed(2)}</td></tr>`;
+  document.getElementById('d-total').textContent=fL(grandTot);
+  buildPersonKPIs();
+  const retTot=persons.reduce((s,p)=>s+(tots['Retirement Savings'][p.id]||0),0);
+  document.getElementById('in-savings').value=retTot.toFixed(2);
 }
 
 // ═══════ EVENTS UI ═══════
@@ -621,6 +575,12 @@ function buildInsights(retRow,eolRow,p,drawRate,retSpend){
   document.getElementById('d-target-sub').textContent=ok?`Corpus ${fL(eolRow.corpus)} exceeds target ${fL(p.house)}`:`Shortfall ${fL(Math.max(0,p.house-eolRow.corpus))} in today's ₹`;
   const tKpi=document.getElementById('d-target-kpi');
   tKpi.style.borderTopWidth='2px';tKpi.style.borderTopColor=ok?'var(--green)':'var(--red)';
+  const retOk=eolRow.raw>=0;
+  document.getElementById('d-retire').textContent=retOk?'✓ Yes':'✗ No';
+  document.getElementById('d-retire').style.color=retOk?'var(--green)':'var(--red)';
+  document.getElementById('d-retire-sub').textContent=retOk?`Corpus intact at age ${p.life}`:`Depleted ${fL(Math.abs(eolRow.raw))} short`;
+  const rKpi=document.getElementById('d-retire-kpi');
+  rKpi.style.borderTopWidth='2px';rKpi.style.borderTopColor=retOk?'var(--green)':'var(--red)';
 }
 
 function drawChart(rows,p){
@@ -687,7 +647,7 @@ function confirmReset(){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;';
   m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 24px;max-width:360px;width:90%;font-family:DM Mono,monospace;">
     <div style="font-family:DM Serif Display,serif;font-size:16px;color:var(--red);margin-bottom:10px;">Reset to Defaults?</div>
-    <p style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:18px;">All account values, events and parameters will be restored to their original defaults. Any changes will be lost.</p>
+    <p style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:18px;">All accounts and events will be cleared, and parameters will be restored to defaults. Person names are preserved.</p>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button onclick="document.getElementById('reset-modal').remove()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;">Cancel</button>
       <button onclick="doReset()" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;font-weight:500;">Reset</button>
@@ -697,223 +657,49 @@ function confirmReset(){
 }
 function doReset(){
   document.getElementById('reset-modal')?.remove();
-  accts=ACCTS.map(r=>({...r}));
-  events=[
-    {age:51,desc:"Chaitra — 11th/12th Education",cost:2,  phase:'pre'},
-    {age:52,desc:"Chaitra — Undergrad Yr 1",     cost:10, phase:'pre'},
-    {age:53,desc:"Chaitra — Undergrad Yr 2",     cost:10, phase:'pre'},
-    {age:54,desc:"Chaitra — Undergrad Yr 3",     cost:10, phase:'pre'},
-    {age:55,desc:"Chaitra — Undergrad Yr 4",     cost:10, phase:'pre'},
-    {age:56,desc:"Chaitra — Grad School Yr 1",   cost:25, phase:'pre'},
-    {age:57,desc:"Chaitra — Grad School Yr 2",   cost:25, phase:'pre'},
-    {age:60,desc:"Medical Emergency",            cost:10, phase:'pre'},
-    {age:65,desc:"House — Gift / Payoff",        cost:250,phase:'post'},
-    {age:70,desc:"Medical Emergency",            cost:15, phase:'post'},
-    {age:80,desc:"Medical Emergency",            cost:20, phase:'post'},
-  ];
-  const defaults={age:40,retAge:60,life:85,inflation:6,retReturn:10,postReturn:6,savings:108.5,annSave:25,saveGrow:6,spend:30,spendFactor:0.75,house:250};
-  const ids={age:'in-age',retAge:'in-ret-age',life:'in-life',inflation:'in-inflation',retReturn:'in-ret-return',postReturn:'in-post-return',savings:'in-savings',annSave:'in-ann-save',saveGrow:'in-save-grow',spend:'in-spend',spendFactor:'in-spend-factor',house:'in-house'};
-  Object.keys(defaults).forEach(k=>{const el=document.getElementById(ids[k]);if(el)el.value=defaults[k];});
-  buildAIRows();buildEventsUI();refreshAll();
+  accts=[];nextAcctId=0;events=[];
+  applyParams({age:40,retAge:60,life:85,inflation:6,retReturn:10,postReturn:6,annSave:25,saveGrow:6,spend:30,spendFactor:0.75,house:250});
+  buildAllAcctRows();buildEventsUI();refreshAll();
   toast('Reset to defaults');
 }
 
-// ═══════ SAVE STATE / DOWNLOAD JSON ═══════
-function gatherState(){
+// ═══════ DOWNLOAD ═══════
+function downloadHTML(){
   const p=getP();
-  return{
-    version:2,savedAt:new Date().toISOString(),
-    accts:accts.map(r=>({...r})),
-    events:[...events],
-    params:{
-      age:p.age,retAge:p.retAge,life:p.life,
+  const state={
+    version:3,persons,nextPersonId,accts,nextAcctId,events,
+    params:{age:p.age,retAge:p.retAge,life:p.life,
       inflation:+document.getElementById('in-inflation').value,
       retReturn:+document.getElementById('in-ret-return').value,
       postReturn:+document.getElementById('in-post-return').value,
-      savings:p.savings,annSave:p.annSave,
-      saveGrow:+document.getElementById('in-save-grow').value,
-      spend:p.spend,spendFactor:p.spendFact,house:p.house,
-    }
+      annSave:p.annSave,saveGrow:+document.getElementById('in-save-grow').value,
+      spend:p.spend,spendFactor:p.spendFact,house:p.house}
   };
-}
-function applyState(state){
-  if(state.accts)state.accts.forEach((r,i)=>{if(accts[i]){accts[i].p=r.p;accts[i].s=r.s;accts[i].c=r.c;}});
-  if(state.events)events=state.events;
-  if(state.params){
-    const m=state.params;
-    const ids={age:'in-age',retAge:'in-ret-age',life:'in-life',inflation:'in-inflation',retReturn:'in-ret-return',postReturn:'in-post-return',savings:'in-savings',annSave:'in-ann-save',saveGrow:'in-save-grow',spend:'in-spend',spendFactor:'in-spend-factor',house:'in-house'};
-    Object.keys(ids).forEach(k=>{const el=document.getElementById(ids[k]);if(el&&m[k]!==undefined)el.value=m[k];});
-  }
-  buildAIRows();buildEventsUI();refreshAll();
-}
-function downloadJSON(){
-  // Download the full HTML app
-  const content=document.documentElement.outerHTML;
-  const blob=new Blob([content],{type:'text/html'});
+  let html=document.documentElement.outerHTML;
+  const tag=`<script>window.__SAVED_STATE__=${JSON.stringify(state).replace(/<\//g,'<\\/')}<\/script>`;
+  html=html.replace('</head>',tag+'</head>');
+  const blob=new Blob([html],{type:'text/html'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='retirement_planner.html';
-  a.click();toast('Downloaded retirement_planner.html ✓');
-}
-function handleFileLoad(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{const state=JSON.parse(ev.target.result);applyState(state);toast('Loaded ✓');}
-    catch(err){toast('Invalid file: '+err.message,'err');}
-    e.target.value='';
-  };
-  reader.readAsText(file);
-}
-
-// ═══════ SAVE TO DRIVE ═══════
-async function saveToDrive(){
-  const btn=document.querySelector('.hbtn-gdrive');
-  const orig=btn.innerHTML;
-  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3l5.72 9.9-5.67 9.82L.61 12.9zm11.44 0L24 12.9l-5.67 9.82-6.11-10.58zm.72 19.72H5.56L2.56 17h18.88z"/></svg> Saving…';
-  btn.disabled=true;
-  try{
-    const FOLDER_ID='14OQooaWNRO_HYdxjlgf5_fJVzyD1jGDL'; // AI/Finances folder
-    const fileName='retirement_planner.html';
-    // Get the full HTML of this page
-    const content=document.documentElement.outerHTML;
-    const bytes=new TextEncoder().encode(content);
-    let b64raw='';const chunk=8192;
-    for(let i=0;i<bytes.length;i+=chunk){b64raw+=String.fromCharCode(...bytes.subarray(i,i+chunk));}
-    const b64=btoa(b64raw);
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',max_tokens:512,
-        mcp_servers:[{type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'gdrive'}],
-        messages:[{role:'user',content:`Use the Google Drive create_file tool to upload a file with these exact parameters:
-- title: "${fileName}"
-- mimeType: "text/html"
-- parentId: "${FOLDER_ID}"
-- disableConversionToGoogleType: true
-- content (base64): ${b64}
-
-Reply with just the file ID on success, or "ERROR: <reason>" if it fails.`}]
-      })
-    });
-    if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t.slice(0,200)}`);}
-    const data=await resp.json();
-    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error).slice(0,200));
-    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
-    if(!txt||/^error/i.test(txt))throw new Error(txt||'No response from Drive');
-    toast('Saved to Drive: AI/Finances/'+fileName+' ✓');
-  }catch(err){
-    showErrorModal('Drive Save Failed',err.message);
-  }finally{btn.innerHTML=orig;btn.disabled=false;}
-}
-function showErrorModal(title,message){
-  const old=document.getElementById('err-modal');if(old)old.remove();
-  const m=document.createElement('div');m.id='err-modal';
-  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;';
-  m.innerHTML=`<div style="background:var(--surface);border:1px solid rgba(247,118,142,.4);border-radius:10px;padding:22px 24px;max-width:460px;width:90%;font-family:DM Mono,monospace;">
-    <div style="font-family:DM Serif Display,serif;font-size:16px;color:var(--red);margin-bottom:10px;">${title}</div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;word-break:break-word;">${message}</div>
-    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;">You can <strong style="color:var(--text)">Download</strong> the file and upload manually to Drive.</p>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button onclick="downloadJSON();document.getElementById('err-modal').remove()" style="background:var(--accent);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;font-weight:500;">⬇ Download Instead</button>
-      <button onclick="document.getElementById('err-modal').remove()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;">Close</button>
-    </div>
-  </div>`;
-  document.body.appendChild(m);
-}
-
-// ═══════ LOAD FROM EXCEL ═══════
-async function loadXlsxFromDrive(){
-  const btn=document.querySelector('.hbtn-blue');
-  const orig=btn.innerHTML;
-  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Loading…';
-  btn.disabled=true;
-  try{
-    const FILE_ID='19VOv43t3rAKq0zlyOzC8VJqZUA2LIYdR'; // Financial Accounts.xlsx in AI/Finances
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',max_tokens:3000,
-        mcp_servers:[{type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'gdrive'}],
-        messages:[{role:'user',content:`Use Google Drive read_file_content on file ID "${FILE_ID}". From the Accounts sheet, extract account rows that have institution names and ₹ values for Praneeth, Sushma, Chaitra. Return ONLY a JSON array, no other text:\n[{"inst":"SBI (Bank)","cat":"Cash in Hand","p":0.25,"s":1.0,"c":0},...]\nCategory rules: banks/credit cards/loans = "Cash in Hand", FD/RD deposits = "Short-Term Savings", mutual funds/equity/ULIP = "Long-Term Savings", NPS/EPF/PPF/SSY = "Retirement Savings". Strip ₹ symbols. Negative values for credit card balances and loans are fine.`}]
-      })
-    });
-    if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t.slice(0,200)}`);}
-    const data=await resp.json();
-    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error).slice(0,200));
-    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    const match=txt.match(/\[[\s\S]*\]/);
-    if(!match)throw new Error('Could not parse account data. Response: '+txt.slice(0,300));
-    const parsed=JSON.parse(match[0]);
-    if(!parsed.length)throw new Error('Empty account list returned');
-    applyXlsxAccounts(parsed);
-    toast('Loaded from Financial Accounts.xlsx ✓ ('+parsed.length+' accounts)');
-  }catch(err){
-    showXlsxFallbackModal(err.message);
-  }finally{btn.innerHTML=orig;btn.disabled=false;}
-}
-function applyXlsxAccounts(parsed){
-  parsed.forEach(row=>{
-    const normInst=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
-    const match=accts.find(a=>normInst(a.inst).includes(normInst(row.inst.split(' ')[0]))||
-      normInst(row.inst).includes(normInst(a.inst.split(' ')[0])));
-    if(match){match.p=+(+row.p||0).toFixed(2);match.s=+(+row.s||0).toFixed(2);match.c=+(+row.c||0).toFixed(2);}
-  });
-  buildAIRows();buildEventsUI();refreshAll();
-}
-function showXlsxFallbackModal(errMsg){
-  const old=document.getElementById('xlsx-modal');if(old)old.remove();
-  const m=document.createElement('div');m.id='xlsx-modal';
-  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;';
-  m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 24px;max-width:460px;width:90%;font-family:DM Mono,monospace;">
-    <div style="font-family:DM Serif Display,serif;font-size:16px;color:var(--accent);margin-bottom:8px;">Load from Excel</div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:10px;color:var(--red);margin-bottom:12px;word-break:break-word;">${errMsg}</div>
-    <p style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:14px;">Choose <strong style="color:var(--text)">Financial Accounts.xlsx</strong> from your device instead:</p>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button onclick="document.getElementById('xlsx-input').click();document.getElementById('xlsx-modal').remove()" style="background:var(--accent2);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;font-weight:500;">Browse File…</button>
-      <button onclick="document.getElementById('xlsx-modal').remove()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;">Cancel</button>
-    </div>
-  </div>`;
-  document.body.appendChild(m);
-}
-function handleXlsxLoad(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      if(!window.XLSX){toast('SheetJS not available — use Drive load','err');return;}
-      const wb=window.XLSX.read(ev.target.result,{type:'array'});
-      const ws=wb.Sheets['Accounts']||wb.Sheets[wb.SheetNames[0]];
-      const rows=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      parseXlsxRows(rows);toast('Loaded from local Excel ✓');
-    }catch(err){toast('Error: '+err.message,'err');}
-    e.target.value='';
-  };
-  reader.readAsArrayBuffer(file);
-}
-function parseXlsxRows(rows){
-  const CAT_MAP={'bank - checking/savings':'Cash in Hand','bank':'Cash in Hand','deposits - fd, rd':'Short-Term Savings','deposit':'Short-Term Savings','mutual funds':'Long-Term Savings','equity':'Long-Term Savings','life insurance (ulip)':'Long-Term Savings','nps/pf':'Retirement Savings','ssy':'Retirement Savings','ppf':'Retirement Savings','credit cards':'Cash in Hand','others':'Cash in Hand'};
-  let currentCat='Cash in Hand';const parsed=[];
-  rows.forEach(row=>{
-    const t=String(row[1]||'').trim().toLowerCase();
-    const inst=String(row[2]||'').trim();
-    if(t&&CAT_MAP[t])currentCat=CAT_MAP[t];
-    if(!inst||inst.length<2)return;
-    const clean=v=>{const s=String(v||'0').replace(/[₹,\s]/g,'');return parseFloat(s)||0;};
-    const p=clean(row[7]),s=clean(row[8]),c=clean(row[9]);
-    if(p===0&&s===0&&c===0)return;
-    parsed.push({inst,cat:currentCat,p,s,c});
-  });
-  if(parsed.length>0)applyXlsxAccounts(parsed);
-  else toast('No account data found','err');
+  a.download='retirement_planner.html';a.click();
+  toast('Downloaded retirement_planner.html ✓');
 }
 
 // ═══════ REFRESH ═══════
-function refreshAll(){buildCatTable();buildFullTable();runProjections();}
+function refreshAll(){buildCatTable();runProjections();}
 
 // ═══════ INIT ═══════
-buildAIRows();
-buildEventsUI();
-refreshAll();
+(function init(){
+  const saved=window.__SAVED_STATE__;
+  if(saved&&saved.version===3){
+    persons=saved.persons||persons;
+    nextPersonId=saved.nextPersonId||persons.length;
+    accts=(saved.accts||[]).map(a=>({...a,vals:{...a.vals}}));
+    nextAcctId=saved.nextAcctId||accts.length;
+    events=saved.events||[];
+    if(saved.params)applyParams(saved.params);
+  }
+  buildPersonsUI();buildAllAcctHeaders();buildAllAcctRows();buildEventsUI();refreshAll();
+})();
 window.addEventListener('resize',()=>{
   const a=document.querySelector('.panel.active');
   if(a&&(a.id==='tab-retinputs'||a.id==='tab-dashboard'))runProjections();
