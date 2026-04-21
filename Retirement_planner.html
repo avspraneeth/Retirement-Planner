@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e0f14;--surface:#161821;--surface2:#1e2030;--border:#2a2d3e;--accent:#c3a96e;--accent2:#7aa2f7;--green:#9ece6a;--red:#f7768e;--orange:#e0af68;--text:#cdd6f4;--muted:#6c7086;--dim:#9399b2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;min-height:100vh;}
+
+/* header */
+header{border-bottom:1px solid var(--border);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);}
+.header-left{display:flex;align-items:baseline;gap:12px;}
+header h1{font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent);}
+header .subtitle{color:var(--muted);font-size:11px;}
+.header-actions{display:flex;gap:8px;align-items:center;}
+
+/* tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);padding:0 24px;}
+.tab{padding:9px 16px;cursor:pointer;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid transparent;transition:all .2s;user-select:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.panel{display:none;padding:16px 24px;}
+.panel.active{display:block;}
+
+/* layout */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* section */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.stitle{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+
+/* fields */
+.field{margin-bottom:8px;}
+.field label{display:block;font-size:11px;color:var(--dim);margin-bottom:3px;}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 8px;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field input.hi{border-color:var(--accent2);color:var(--accent2);}
+.fnote{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* KPI boxes */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.gold::before{background:var(--accent);}
+.kpi.blue::before{background:var(--accent2);}
+.kpi.green::before{background:var(--green);}
+.kpi.orange::before{background:var(--orange);}
+.kpi-lbl{font-size:10px;letter-spacing:.6px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;}
+.kpi-val{font-size:18px;font-family:'DM Serif Display',serif;}
+.kpi-val.gold{color:var(--accent);}
+.kpi-val.blue{color:var(--accent2);}
+.kpi-val.green{color:var(--green);}
+.kpi-val.orange{color:var(--orange);}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* tables */
+.nw-table{width:100%;border-collapse:collapse;}
+.nw-table th{text-align:left;font-size:11px;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--border);font-weight:400;}
+.nw-table th.r{text-align:right;}
+.nw-table td{padding:4px 8px;border-bottom:1px solid rgba(42,45,62,.3);font-size:12px;}
+.nw-table td.r{text-align:right;}
+.nw-table tr:hover td{background:var(--surface2);}
+.cat-badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:3px;letter-spacing:.3px;white-space:nowrap;}
+.cat-ret{background:rgba(195,169,110,.15);color:var(--accent);}
+.cat-lt{background:rgba(122,162,247,.15);color:var(--accent2);}
+.cat-st{background:rgba(158,206,106,.15);color:var(--green);}
+.cat-cash{background:rgba(224,175,104,.15);color:var(--orange);}
+.phase-label{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;letter-spacing:.5px;text-transform:uppercase;}
+.phase-acc{background:rgba(122,162,247,.15);color:var(--accent2);}
+.phase-ret{background:rgba(195,169,110,.15);color:var(--accent);}
+.pos{color:var(--green);}
+.neg{color:var(--red);}
+.total-row td{font-family:'DM Serif Display',serif;font-size:13px;border-top:1px solid var(--border);border-bottom:none;padding-top:7px;color:var(--accent);}
+.total-row td.r{text-align:right;}
+.subtotal-row td{font-size:11px;border-top:1px dashed rgba(42,45,62,.6);border-bottom:none;padding-top:4px;padding-bottom:6px;color:var(--dim);font-style:italic;}
+.subtotal-row td.r{text-align:right;}
+
+/* chart */
+.chart-wrap{position:relative;margin:6px 0;}
+canvas{display:block;}
+.legend{display:flex;gap:14px;font-size:10px;color:var(--muted);margin-top:5px;flex-wrap:wrap;}
+.ldot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;}
+
+/* header buttons — consistent pill style */
+.hbtn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:5px;padding:6px 13px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.7px;text-transform:uppercase;cursor:pointer;transition:opacity .15s,transform .1s;font-weight:500;}
+.hbtn:hover{opacity:.82;}
+.hbtn:active{transform:scale(.97);}
+.hbtn-danger{background:#3d1f24;color:var(--red);border:1px solid rgba(247,118,142,.35);}
+.hbtn-danger:hover{background:#4d2530;}
+.hbtn-blue{background:#1a2540;color:var(--accent2);border:1px solid rgba(122,162,247,.35);}
+.hbtn-blue:hover{background:#1f2e50;}
+.hbtn-gdrive{background:#1a2540;color:#7aa2f7;border:1px solid rgba(66,133,244,.4);}
+.hbtn-gdrive:hover{background:#1f2e50;}
+.hbtn-accent{background:var(--accent);color:var(--bg);border:1px solid var(--accent);}
+/* other buttons */
+.btn{background:var(--accent);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.8px;cursor:pointer;text-transform:uppercase;font-weight:500;transition:opacity .2s;}
+.btn:hover{opacity:.85;}
+.btn-sm{background:transparent;color:var(--accent2);border:1px solid var(--accent2);border-radius:4px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;}
+.btn-sm:hover{background:var(--accent2);color:var(--bg);}
+.btn-del{background:transparent;color:var(--red);border:1px solid rgba(247,118,142,.25);border-radius:4px;padding:3px 7px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;}
+
+/* misc */
+.mt10{margin-top:10px;}
+.mt12{margin-top:12px;}
+.ret-scroll{max-height:300px;overflow-y:auto;}
+.ret-scroll::-webkit-scrollbar{width:3px;}
+.ret-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.note-cell{font-size:10px;color:var(--muted);}
+
+/* event rows */
+.ev-hdr{display:grid;grid-template-columns:70px 1fr 80px 80px 28px;gap:5px;margin-bottom:4px;}
+.ev-hdr span{font-size:10px;color:var(--muted);}
+.ev-row{display:grid;grid-template-columns:70px 1fr 80px 80px 28px;gap:5px;align-items:center;margin-bottom:4px;}
+.ev-row input,.ev-row select{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px;outline:none;width:100%;}
+
+/* account input rows */
+.ai-hdr{display:grid;grid-template-columns:2fr 56px 56px 56px 58px;gap:4px;margin-bottom:5px;}
+.ai-hdr span{font-size:10px;color:var(--muted);text-align:right;}
+.ai-hdr span:first-child{text-align:left;}
+.ai-row{display:grid;grid-template-columns:2fr 56px 56px 56px 58px;gap:4px;margin-bottom:3px;align-items:center;}
+.ai-row input{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:3px 5px;outline:none;width:100%;text-align:right;}
+.ai-row input:focus{border-color:var(--accent);}
+.ai-total{font-size:11px;text-align:right;padding:3px 2px;}
+.ai-cat{font-size:10px;letter-spacing:.8px;color:var(--dim);text-transform:uppercase;margin:9px 0 3px;border-top:1px solid var(--border);padding-top:7px;font-weight:500;}
+.ai-cat-total{display:grid;grid-template-columns:2fr 56px 56px 56px 58px;gap:4px;margin:3px 0 2px;padding:3px 0;border-top:1px dashed rgba(42,45,62,.5);}
+.ai-cat-total span{font-size:10px;text-align:right;color:var(--dim);}
+.ai-cat-total span:first-child{color:var(--dim);font-size:10px;}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:11px;color:var(--text);z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <h1>Retirement Planner</h1>
+    <span class="subtitle">₹ Lakhs · all projections in today's ₹ (real terms, inflation-adjusted)</span>
+  </div>
+  <div class="header-actions">
+    <button class="hbtn hbtn-danger" onclick="confirmReset()">↺ Reset</button>
+    <button class="hbtn hbtn-blue" onclick="loadXlsxFromDrive()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Load from Excel
+    </button>
+    <button class="hbtn hbtn-gdrive" onclick="saveToDrive()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3l5.72 9.9-5.67 9.82L.61 12.9zm11.44 0L24 12.9l-5.67 9.82-6.11-10.58zm.72 19.72H5.56L2.56 17h18.88z"/></svg>
+      Save to Drive
+    </button>
+    <button class="hbtn hbtn-accent" onclick="downloadJSON()">⬇ Download</button>
+  </div>
+</header>
+<div class="tabs">
+  <div class="tab active"  data-tab="dashboard"  onclick="showTab('dashboard')">Dashboard</div>
+  <div class="tab"         data-tab="accinputs"   onclick="showTab('accinputs')">Account Inputs</div>
+  <div class="tab"         data-tab="retinputs"   onclick="showTab('retinputs')">Retirement Inputs</div>
+</div>
+<div id="toast" class="toast"></div>
+<input type="file" id="file-input" accept=".json" style="display:none" onchange="handleFileLoad(event)">
+<input type="file" id="xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="handleXlsxLoad(event)">
+
+<!-- ══════════════════ DASHBOARD ══════════════════ -->
+<div id="tab-dashboard" class="panel active">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
+
+    <!-- LEFT -->
+    <div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:12px;">
+        <div class="kpi gold" style="grid-column:1/-1;">
+          <div class="kpi-lbl">Total Net Worth</div>
+          <div class="kpi-val gold" id="d-total">—</div>
+          <div class="kpi-sub">All categories</div>
+        </div>
+        <div class="kpi blue"><div class="kpi-lbl">Praneeth</div><div class="kpi-val blue" id="d-p">—</div><div class="kpi-sub" id="d-p-pct">—</div></div>
+        <div class="kpi blue"><div class="kpi-lbl">Sushma</div><div class="kpi-val blue" id="d-s">—</div><div class="kpi-sub" id="d-s-pct">—</div></div>
+        <div class="kpi orange"><div class="kpi-lbl">Chaitra</div><div class="kpi-val orange" id="d-c">—</div><div class="kpi-sub" id="d-c-pct">—</div></div>
+      </div>
+      <div class="section">
+        <div class="stitle">Portfolio by Category</div>
+        <table class="nw-table">
+          <thead><tr><th>Category</th><th class="r">Praneeth</th><th class="r">Sushma</th><th class="r">Chaitra</th><th class="r">Total</th></tr></thead>
+          <tbody id="cat-tbody"></tbody>
+          <tfoot><tr class="total-row"><td>Total</td><td class="r" id="cf-p">—</td><td class="r" id="cf-s">—</td><td class="r" id="cf-c">—</td><td class="r" id="cf-t">—</td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;align-content:start;">
+      <div class="kpi gold"><div class="kpi-lbl">Corpus at Retirement</div><div class="kpi-val gold" id="d-corpus">—</div><div class="kpi-sub" id="d-corpus-sub">Today's ₹</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Corpus at End of Life</div><div class="kpi-val" id="d-eol" style="color:var(--green)">—</div><div class="kpi-sub" id="d-eol-sub">Today's ₹</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Retirement Annual Spend</div><div class="kpi-val blue" id="d-ret-spend">—</div><div class="kpi-sub">Today's ₹</div></div>
+      <div class="kpi orange"><div class="kpi-lbl">Leave-Behind Target</div><div class="kpi-val orange" id="d-leave">—</div><div class="kpi-sub">Today's ₹</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Annual Draw</div><div class="kpi-val blue" id="d-draw">—</div><div class="kpi-sub">Today's ₹</div></div>
+      <div class="kpi" id="d-rate-kpi"><div class="kpi-lbl">Draw Rate</div><div class="kpi-val" id="d-draw-rate">—</div><div class="kpi-sub">Safe &lt; 4–5%</div></div>
+      <div class="kpi" id="d-target-kpi" style="grid-column:1/-1;"><div class="kpi-lbl">Leave-Behind Achievable</div><div class="kpi-val" id="d-target">—</div><div class="kpi-sub" id="d-target-sub">—</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════ ACCOUNT INPUTS ══════════════════ -->
+<div id="tab-accinputs" class="panel">
+  <div class="g2">
+    <div class="section">
+      <div class="stitle">Cash in Hand (₹ Lakhs)</div>
+      <div class="ai-hdr"><span>Institution</span><span>P</span><span>S</span><span>C</span><span>Total</span></div>
+      <div id="ai-rows-a"></div>
+    </div>
+    <div class="section">
+      <div class="stitle">Short-Term, Long-Term &amp; Retirement Savings (₹ Lakhs)</div>
+      <div class="ai-hdr"><span>Institution</span><span>P</span><span>S</span><span>C</span><span>Total</span></div>
+      <div id="ai-rows-b"></div>
+      <button class="btn mt12" onclick="recalcAccounts()">Recalculate ↻</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ RETIREMENT INPUTS ══════════════════ -->
+<div id="tab-retinputs" class="panel">
+  <div class="g2">
+    <div>
+      <div class="section">
+        <div class="stitle">Parameters &amp; Assumptions</div>
+        <div class="r3">
+          <div class="field"><label>Current Age</label><input type="number" id="in-age" value="40" step="1" onchange="runProjections()"></div>
+          <div class="field"><label>Retirement Age</label><input type="number" id="in-ret-age" value="60" step="1" onchange="runProjections()"></div>
+          <div class="field"><label>Lifespan</label><input type="number" id="in-life" value="85" step="1" onchange="runProjections()"></div>
+          <div class="field"><label>Inflation (%/yr)</label><input type="number" id="in-inflation" value="6" step="0.5" onchange="runProjections()"></div>
+          <div class="field"><label>Pre-Ret. Return (%)</label><input type="number" id="in-ret-return" value="10" step="0.5" onchange="runProjections()"></div>
+          <div class="field"><label>Post-Ret. Return (%)</label><input type="number" id="in-post-return" value="6" step="0.5" onchange="runProjections()"></div>
+        </div>
+      </div>
+      <div class="section mt10">
+        <div class="stitle">Savings &amp; Spending</div>
+        <div class="r2">
+          <div class="field">
+            <label>Current Savings — Retirement Category (₹ L)</label>
+            <input type="number" id="in-savings" value="108.5" step="1" class="hi" onchange="runProjections()">
+            <div class="fnote">Auto-set from Retirement Savings category</div>
+          </div>
+          <div class="field"><label>Annual Savings This Year (₹ L)</label><input type="number" id="in-ann-save" value="25" step="1" onchange="runProjections()"></div>
+          <div class="field"><label>Savings Growth Rate (%/yr)</label><input type="number" id="in-save-grow" value="6" step="0.5" onchange="runProjections()"></div>
+          <div class="field"><label>Current Annual Spend (₹ L)</label><input type="number" id="in-spend" value="30" step="1" onchange="runProjections()"></div>
+          <div class="field"><label>Retirement Spend Factor</label><input type="number" id="in-spend-factor" value="0.75" step="0.05" onchange="runProjections()"><div class="fnote">0.75 = 75% of pre-ret spend</div></div>
+          <div class="field"><label>Leave-Behind (₹ L, today's ₹)</label><input type="number" id="in-house" value="250" step="10" onchange="runProjections()"></div>
+        </div>
+      </div>
+      <div class="section mt10">
+        <div class="stitle">One-Time Events (today's ₹ L) — at Praneeth's age</div>
+        <div class="ev-hdr"><span>Age (P)</span><span>Description</span><span>Cost ₹L</span><span>Phase</span><span></span></div>
+        <div id="ev-rows"></div>
+        <button class="btn-sm mt10" onclick="addEvent()">+ Add Event</button>
+      </div>
+    </div>
+    <div>
+      <div class="section">
+        <div class="stitle">Corpus Growth — Today's ₹ (Real Terms)</div>
+        <div class="chart-wrap" id="chart-wrap"><canvas id="ret-chart"></canvas></div>
+        <div class="legend">
+          <span><span class="ldot" style="background:var(--accent2)"></span>Accumulation</span>
+          <span><span class="ldot" style="background:var(--accent)"></span>Drawdown</span>
+          <span><span class="ldot" style="background:var(--red)"></span>Expenses</span>
+        </div>
+      </div>
+      <div class="section mt10">
+        <div class="stitle">Year-by-Year — Today's ₹ (Real Terms)</div>
+        <div class="ret-scroll">
+          <table class="nw-table">
+            <thead><tr><th>Age</th><th>Phase</th><th class="r">Corpus ₹L</th><th class="r">Expenses ₹L</th><th>Notes</th></tr></thead>
+            <tbody id="proj-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// ACCOUNT DATA
+// ═══════════════════════════════════════
+const ACCTS=[
+  {cat:'Cash in Hand',inst:'SBI (Bank)',                p:0.25,  s:1,     c:0   },
+  {cat:'Cash in Hand',inst:'ICICI (Bank)',               p:1.25,  s:0.75,  c:0.25},
+  {cat:'Cash in Hand',inst:'Axis Bank',                  p:0.25,  s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'Andhra Bank',                p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'PNB',                        p:0,     s:0.25,  c:0   },
+  {cat:'Cash in Hand',inst:'SBM (IndMoney)',             p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'Indian Bank',                p:0.25,  s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'SBI Elite (CC)',             p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'ICICI MMT (CC)',             p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'ICICI HPCL (CC)',            p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'HSBC Travel One (CC)',       p:0,     s:0.5,   c:0   },
+  {cat:'Cash in Hand',inst:'Amex Platinum Reserve (CC)', p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'IndusInd Avios (S) (CC)',    p:0,     s:-1.25, c:0   },
+  {cat:'Cash in Hand',inst:'IndusInd Avios (P) (CC)',    p:-0.25, s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'BOBCard Etihad Guest (CC)',  p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'Axis Vistara (CC)',          p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'Axis Atlas (CC)',            p:-1,    s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'ICICI Emirates (CC)',        p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'ICICI Times Black (CC)',     p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'HDFC Tata Neu Infinity (CC)',p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'HDFC Marriott Bonvoy (CC)',  p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'Amex Platinum Travel (CC)',  p:0,     s:0,     c:0   },
+  {cat:'Cash in Hand',inst:'Personal Loan',              p:-6.25, s:0,     c:0   },
+  {cat:'Short-Term Savings',inst:'SBI FD/RD',            p:0.25,  s:0,     c:0   },
+  {cat:'Short-Term Savings',inst:'Axis Bank FD/RD',      p:0.5,   s:0,     c:0   },
+  {cat:'Short-Term Savings',inst:'ICICI FD/RD',          p:0.75,  s:1.5,   c:2   },
+  {cat:'Long-Term Savings', inst:'Mutual Funds',         p:25,    s:20,    c:0   },
+  {cat:'Long-Term Savings', inst:'Equity — India',       p:21,    s:9,     c:0   },
+  {cat:'Long-Term Savings', inst:'Equity — US',          p:5,     s:0,     c:0   },
+  {cat:'Long-Term Savings', inst:'ULIP Tata AIA',        p:8.5,   s:0,     c:0   },
+  {cat:'Long-Term Savings', inst:'ULIP ICICI',           p:12,    s:8.75,  c:0   },
+  {cat:'Retirement Savings',inst:'NPS / NSDL / EPF',     p:53,    s:55.5,  c:0   },
+  {cat:'Retirement Savings',inst:'PPF (SBI / ICICI)',    p:19,    s:13,    c:0   },
+  {cat:'Retirement Savings',inst:'SSY (ICICI)',          p:0,     s:0,     c:6.5 },
+];
+
+let accts=ACCTS.map(r=>({...r}));
+
+const CAT_ORDER=['Cash in Hand','Short-Term Savings','Long-Term Savings','Retirement Savings'];
+const CAT_CLS={'Cash in Hand':'cat-cash','Short-Term Savings':'cat-st','Long-Term Savings':'cat-lt','Retirement Savings':'cat-ret'};
+
+let events=[
+  {age:51,desc:"Chaitra — 11th/12th Education",cost:2,  phase:'pre'},
+  {age:52,desc:"Chaitra — Undergrad Yr 1",     cost:10, phase:'pre'},
+  {age:53,desc:"Chaitra — Undergrad Yr 2",     cost:10, phase:'pre'},
+  {age:54,desc:"Chaitra — Undergrad Yr 3",     cost:10, phase:'pre'},
+  {age:55,desc:"Chaitra — Undergrad Yr 4",     cost:10, phase:'pre'},
+  {age:56,desc:"Chaitra — Grad School Yr 1",   cost:25, phase:'pre'},
+  {age:57,desc:"Chaitra — Grad School Yr 2",   cost:25, phase:'pre'},
+  {age:60,desc:"Medical Emergency",            cost:10, phase:'pre'},
+  {age:65,desc:"House — Gift / Payoff",        cost:250,phase:'post'},
+  {age:70,desc:"Medical Emergency",            cost:15, phase:'post'},
+  {age:80,desc:"Medical Emergency",            cost:20, phase:'post'},
+];
+
+// ═══════ HELPERS ═══════
+function fv(v){
+  if(!v&&v!==0)return'—';
+  const a=Math.abs(v);
+  return v<0?`<span class="neg">(${a.toFixed(2)})</span>`:a===0?'—':a.toFixed(2);
+}
+function fL(v){return'₹'+v.toFixed(2)+' L';}
+function toast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show '+(type==='err'?'err':'ok');
+  setTimeout(()=>t.className='toast',2800);
+}
+
+// ═══════ ACCOUNT INPUTS ═══════
+function buildAIRows(){
+  const partA=accts.filter(r=>r.cat==='Cash in Hand');
+  const partB=accts.filter(r=>r.cat!=='Cash in Hand');
+  fillAIPanel(document.getElementById('ai-rows-a'),partA,0);
+  fillAIPanel(document.getElementById('ai-rows-b'),partB,partA.length);
+}
+
+function fillAIPanel(el,rows,offset){
+  el.innerHTML='';
+  let lastCat='';
+  let catBuf=[];   // buffer rows for current cat to emit subtotal after
+  let catStart=0;
+
+  function flushCatTotal(cat,buf,off){
+    if(buf.length===0)return;
+    let cp=0,cs=0,cc=0;
+    buf.forEach(({localIdx})=>{
+      const i=localIdx+off;
+      cp+=(parseFloat(document.getElementById('ap-'+i)?.value)||0);
+      cs+=(parseFloat(document.getElementById('as-'+i)?.value)||0);
+      cc+=(parseFloat(document.getElementById('ac-'+i)?.value)||0);
+    });
+    // subtotal row — we'll use stored values from rows array instead
+    let sp=0,ss=0,sc=0;
+    buf.forEach(({row})=>{sp+=row.p;ss+=row.s;sc+=row.c;});
+    const st=sp+ss+sc;
+    const d=document.createElement('div');
+    d.className='ai-cat-total';
+    d.id='catTotal-'+cat.replace(/\s/g,'-');
+    const tc=st<0?'var(--red)':st>0?'var(--accent)':'var(--muted)';
+    d.innerHTML=`<span style="color:var(--dim);font-size:10px;">${cat} Total</span>
+      <span style="color:var(--dim)">${sp.toFixed(2)}</span>
+      <span style="color:var(--dim)">${ss.toFixed(2)}</span>
+      <span style="color:var(--dim)">${sc.toFixed(2)}</span>
+      <span style="color:${tc};font-weight:500">${st.toFixed(2)}</span>`;
+    el.appendChild(d);
+  }
+
+  rows.forEach((row,localIdx)=>{
+    if(row.cat!==lastCat){
+      if(lastCat!=='') flushCatTotal(lastCat,catBuf,offset);
+      catBuf=[];
+      const h=document.createElement('div');
+      h.className='ai-cat';
+      h.textContent=row.cat;
+      el.appendChild(h);
+      lastCat=row.cat;
+    }
+    catBuf.push({row,localIdx});
+    const i=localIdx+offset;
+    const tot=row.p+row.s+row.c;
+    const tc=tot<0?'var(--red)':tot>0?'var(--accent2)':'var(--muted)';
+    const d=document.createElement('div');
+    d.className='ai-row';
+    d.innerHTML=`<span style="font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${row.inst}">${row.inst}</span>
+      <input type="number" step="0.25" value="${row.p}" id="ap-${i}" onchange="liveRecalc()">
+      <input type="number" step="0.25" value="${row.s}" id="as-${i}" onchange="liveRecalc()">
+      <input type="number" step="0.25" value="${row.c}" id="ac-${i}" onchange="liveRecalc()">
+      <span class="ai-total" id="at-${i}" style="color:${tc}">${tot.toFixed(2)}</span>`;
+    el.appendChild(d);
+  });
+  if(lastCat!=='') flushCatTotal(lastCat,catBuf,offset);
+}
+
+function rebuildCatTotals(){
+  // Recompute category totals after live edits
+  const catSums={};
+  accts.forEach((row,i)=>{
+    if(!catSums[row.cat])catSums[row.cat]={p:0,s:0,c:0};
+    catSums[row.cat].p+=row.p;
+    catSums[row.cat].s+=row.s;
+    catSums[row.cat].c+=row.c;
+  });
+  Object.keys(catSums).forEach(cat=>{
+    const el=document.getElementById('catTotal-'+cat.replace(/\s/g,'-'));
+    if(!el)return;
+    const {p,s,c}=catSums[cat];
+    const t=p+s+c;
+    const tc=t<0?'var(--red)':t>0?'var(--accent)':'var(--muted)';
+    const spans=el.querySelectorAll('span');
+    if(spans[1])spans[1].textContent=p.toFixed(2);
+    if(spans[2])spans[2].textContent=s.toFixed(2);
+    if(spans[3])spans[3].textContent=c.toFixed(2);
+    if(spans[4]){spans[4].textContent=t.toFixed(2);spans[4].style.color=tc;}
+  });
+}
+
+function liveRecalc(){
+  accts.forEach((row,i)=>{
+    row.p=parseFloat(document.getElementById('ap-'+i)?.value)||0;
+    row.s=parseFloat(document.getElementById('as-'+i)?.value)||0;
+    row.c=parseFloat(document.getElementById('ac-'+i)?.value)||0;
+    const tot=row.p+row.s+row.c;
+    const el=document.getElementById('at-'+i);
+    if(el){el.textContent=tot.toFixed(2);el.style.color=tot<0?'var(--red)':tot>0?'var(--accent2)':'var(--muted)';}
+  });
+  rebuildCatTotals();
+  refreshAll();
+}
+function recalcAccounts(){liveRecalc();}
+function buildFullTable(){}
+
+// ═══════ CATEGORY TABLE (Dashboard) ═══════
+function buildCatTable(){
+  const tots={};
+  CAT_ORDER.forEach(c=>{tots[c]={p:0,s:0,c:0};});
+  accts.forEach(r=>{if(tots[r.cat]){tots[r.cat].p+=r.p;tots[r.cat].s+=r.s;tots[r.cat].c+=r.c;}});
+  const tb=document.getElementById('cat-tbody');
+  tb.innerHTML='';
+  let gp=0,gs=0,gc=0;
+  CAT_ORDER.forEach(cat=>{
+    const t=tots[cat],tot=t.p+t.s+t.c;
+    gp+=t.p;gs+=t.s;gc+=t.c;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="cat-badge ${CAT_CLS[cat]}">${cat}</span></td>
+      <td class="r">${t.p.toFixed(2)}</td><td class="r">${t.s.toFixed(2)}</td><td class="r">${t.c.toFixed(2)}</td>
+      <td class="r ${tot<0?'neg':'pos'}">${tot.toFixed(2)}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('cf-p').textContent=gp.toFixed(2);
+  document.getElementById('cf-s').textContent=gs.toFixed(2);
+  document.getElementById('cf-c').textContent=gc.toFixed(2);
+  document.getElementById('cf-t').textContent=(gp+gs+gc).toFixed(2);
+  const tot=gp+gs+gc;
+  document.getElementById('d-total').textContent=fL(tot);
+  document.getElementById('d-p').textContent=fL(gp);
+  document.getElementById('d-s').textContent=fL(gs);
+  document.getElementById('d-c').textContent=fL(gc);
+  document.getElementById('d-p-pct').textContent=tot?(gp/tot*100).toFixed(1)+'% of total':'—';
+  document.getElementById('d-s-pct').textContent=tot?(gs/tot*100).toFixed(1)+'% of total':'—';
+  document.getElementById('d-c-pct').textContent=tot?(gc/tot*100).toFixed(1)+'% of total':'—';
+  const retTot=tots['Retirement Savings'];
+  document.getElementById('in-savings').value=(retTot.p+retTot.s+retTot.c).toFixed(2);
+}
+
+// ═══════ EVENTS UI ═══════
+function buildEventsUI(){
+  const el=document.getElementById('ev-rows');
+  el.innerHTML='';
+  events.forEach((_,i)=>el.appendChild(mkEvRow(i)));
+}
+function mkEvRow(i){
+  const ev=events[i];
+  const d=document.createElement('div');
+  d.className='ev-row';
+  d.innerHTML=`<input type="number" step="1" value="${ev.age}" id="ev-age-${i}" onchange="evCh(${i})">
+    <input type="text" value="${ev.desc}" id="ev-desc-${i}" onchange="evCh(${i})">
+    <input type="number" step="0.5" value="${ev.cost}" id="ev-cost-${i}" onchange="evCh(${i})">
+    <select id="ev-ph-${i}" onchange="evCh(${i})">
+      <option value="pre" ${ev.phase==='pre'?'selected':''}>Pre-Ret</option>
+      <option value="post" ${ev.phase==='post'?'selected':''}>Post-Ret</option>
+    </select>
+    <button class="btn-del" onclick="delEv(${i})">✕</button>`;
+  return d;
+}
+function evCh(i){
+  events[i].age=parseFloat(document.getElementById('ev-age-'+i).value)||0;
+  events[i].desc=document.getElementById('ev-desc-'+i).value;
+  events[i].cost=parseFloat(document.getElementById('ev-cost-'+i).value)||0;
+  events[i].phase=document.getElementById('ev-ph-'+i).value;
+  runProjections();
+}
+function addEvent(){events.push({age:55,desc:'New Event',cost:5,phase:'pre'});buildEventsUI();runProjections();}
+function delEv(i){events.splice(i,1);buildEventsUI();runProjections();}
+
+// ═══════ PROJECTIONS ═══════
+function getP(){
+  return{
+    age:       +document.getElementById('in-age').value,
+    retAge:    +document.getElementById('in-ret-age').value,
+    life:      +document.getElementById('in-life').value,
+    inflation: +document.getElementById('in-inflation').value/100,
+    retRet:    +document.getElementById('in-ret-return').value/100,
+    postRet:   +document.getElementById('in-post-return').value/100,
+    savings:   +document.getElementById('in-savings').value,
+    annSave:   +document.getElementById('in-ann-save').value,
+    saveGrow:  +document.getElementById('in-save-grow').value/100,
+    spend:     +document.getElementById('in-spend').value,
+    spendFact: +document.getElementById('in-spend-factor').value,
+    house:     +document.getElementById('in-house').value,
+  };
+}
+
+function runProjections(){
+  const p=getP();
+  const rPre=(1+p.retRet)/(1+p.inflation)-1;
+  const rPost=(1+p.postRet)/(1+p.inflation)-1;
+  const rSave=(1+p.saveGrow)/(1+p.inflation)-1;
+  const retSpend=p.spend*p.spendFact;
+  const evMap={};
+  events.forEach(ev=>{if(!evMap[ev.age])evMap[ev.age]=[];evMap[ev.age].push(ev);});
+  let corpus=p.savings,annSave=p.annSave;
+  const rows=[];
+  for(let age=p.age+1;age<=p.life;age++){
+    const isRet=age>p.retAge;
+    let expense=0;const notes=[];
+    if(!isRet){
+      corpus=corpus*(1+rPre)+annSave;annSave*=(1+rSave);
+      if(evMap[age])evMap[age].filter(e=>e.phase==='pre').forEach(e=>{corpus-=e.cost;expense+=e.cost;notes.push(e.desc);});
+    }else{
+      corpus=corpus*(1+rPost)-retSpend;expense=retSpend;
+      if(evMap[age])evMap[age].filter(e=>e.phase==='post').forEach(e=>{corpus-=e.cost;expense+=e.cost;notes.push(e.desc);});
+      if(age===p.retAge+1)notes.push('Retirement!');
+    }
+    rows.push({age,corpus:Math.max(0,corpus),raw:corpus,expense,note:notes.join('; '),isRet});
+  }
+  const retRow=rows.find(r=>r.age===p.retAge)||rows.find(r=>r.age===p.retAge+1)||rows[0];
+  const eolRow=rows[rows.length-1];
+  const drawRate=retRow.corpus>0?retSpend/retRow.corpus*100:Infinity;
+
+  document.getElementById('d-corpus').textContent=fL(retRow.corpus);
+  document.getElementById('d-corpus-sub').textContent=`Age ${p.retAge} · Today's ₹`;
+  const eolEl=document.getElementById('d-eol');
+  eolEl.textContent=eolRow.corpus>0?fL(eolRow.corpus):'Depleted';
+  eolEl.style.color=eolRow.corpus>0?'var(--green)':'var(--red)';
+  document.getElementById('d-eol-sub').textContent=`Age ${p.life} · Today's ₹`;
+  document.getElementById('d-ret-spend').textContent=fL(retSpend);
+  document.getElementById('d-leave').textContent=fL(p.house);
+  buildInsights(retRow,eolRow,p,drawRate,retSpend);
+
+  const tb=document.getElementById('proj-tbody');
+  tb.innerHTML='';
+  rows.forEach(r=>{
+    const ph=r.isRet?`<span class="phase-label phase-ret">Retired</span>`:`<span class="phase-label phase-acc">Accum.</span>`;
+    const cc=r.corpus<50?'neg':r.corpus>500?'pos':'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.age}</td><td>${ph}</td><td class="r ${cc}">${r.corpus.toFixed(1)}</td><td class="r">${r.expense>0?r.expense.toFixed(1):'—'}</td><td class="note-cell">${r.note||'—'}</td>`;
+    tb.appendChild(tr);
+  });
+  drawChart(rows,p);
+}
+
+function buildInsights(retRow,eolRow,p,drawRate,retSpend){
+  document.getElementById('d-draw').textContent=fL(retSpend);
+  const drEl=document.getElementById('d-draw-rate');
+  const drKpi=document.getElementById('d-rate-kpi');
+  const drOk=isFinite(drawRate)&&drawRate<5;
+  drEl.textContent=isFinite(drawRate)?drawRate.toFixed(2)+'%':'∞';
+  drEl.style.color=drOk?'var(--green)':'var(--red)';
+  drKpi.style.borderTopWidth='2px';
+  drKpi.style.borderTopColor=drOk?'var(--green)':'var(--red)';
+  const ok=eolRow.corpus>=p.house;
+  document.getElementById('d-target').textContent=ok?'✓ Yes':'✗ No';
+  document.getElementById('d-target').style.color=ok?'var(--green)':'var(--red)';
+  document.getElementById('d-target-sub').textContent=ok?`Corpus ${fL(eolRow.corpus)} exceeds target ${fL(p.house)}`:`Shortfall ${fL(Math.max(0,p.house-eolRow.corpus))} in today's ₹`;
+  const tKpi=document.getElementById('d-target-kpi');
+  tKpi.style.borderTopWidth='2px';tKpi.style.borderTopColor=ok?'var(--green)':'var(--red)';
+}
+
+function drawChart(rows,p){
+  const wrap=document.getElementById('chart-wrap');
+  const W=Math.max(wrap.clientWidth||500,300),H=220;
+  wrap.style.height=H+'px';
+  const cv=document.getElementById('ret-chart');
+  cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad={t:14,r:14,b:26,l:52};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const maxV=Math.max(...rows.map(r=>r.corpus),10);
+  const minA=rows[0].age,maxA=rows[rows.length-1].age,aR=maxA-minA;
+  const xp=a=>pad.l+((a-minA)/aR)*cw;
+  const yp=v=>pad.t+ch-(Math.max(0,v)/maxV)*ch;
+  ctx.strokeStyle='#2a2d3e44';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(ch/4)*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    const v=((4-i)/4)*maxV;
+    ctx.fillStyle='#6c7086';ctx.font='9px monospace';ctx.textAlign='right';
+    ctx.fillText(v>=1000?(v/100).toFixed(0)+'k':v.toFixed(0),pad.l-3,y+3);
+  }
+  ctx.fillStyle='#6c7086';ctx.font='9px monospace';ctx.textAlign='center';
+  rows.filter((_,i)=>i%5===0).forEach(r=>ctx.fillText(r.age,xp(r.age),H-5));
+  const rx=xp(p.retAge);
+  ctx.strokeStyle='#e0af6855';ctx.setLineDash([4,3]);ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(rx,pad.t);ctx.lineTo(rx,H-pad.b);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#e0af68';ctx.font='9px monospace';ctx.textAlign='left';
+  ctx.fillText('Retire',rx+3,pad.t+9);
+  const postR=rows.filter(r=>r.isRet);
+  if(postR.length>0){
+    ctx.beginPath();ctx.moveTo(xp(postR[0].age),yp(postR[0].expense));
+    postR.forEach(r=>ctx.lineTo(xp(r.age),yp(r.expense)));
+    ctx.lineTo(xp(postR[postR.length-1].age),H-pad.b);ctx.lineTo(xp(postR[0].age),H-pad.b);ctx.closePath();
+    ctx.fillStyle='rgba(247,118,142,0.06)';ctx.fill();
+    ctx.beginPath();postR.forEach((r,i)=>i===0?ctx.moveTo(xp(r.age),yp(r.expense)):ctx.lineTo(xp(r.age),yp(r.expense)));
+    ctx.strokeStyle='#f7768e66';ctx.lineWidth=1.5;ctx.stroke();
+  }
+  const preR=rows.filter(r=>!r.isRet);
+  if(preR.length>1){ctx.beginPath();preR.forEach((r,i)=>i===0?ctx.moveTo(xp(r.age),yp(r.corpus)):ctx.lineTo(xp(r.age),yp(r.corpus)));ctx.strokeStyle='#7aa2f7';ctx.lineWidth=2.5;ctx.stroke();}
+  if(postR.length>1){ctx.beginPath();postR.forEach((r,i)=>i===0?ctx.moveTo(xp(r.age),yp(r.corpus)):ctx.lineTo(xp(r.age),yp(r.corpus)));ctx.strokeStyle='#c3a96e';ctx.lineWidth=2.5;ctx.stroke();}
+  [[p.retAge,'#e0af68'],[p.life,'#9ece6a']].forEach(([age,col])=>{
+    const row=rows.find(r=>r.age===age);
+    if(row){ctx.beginPath();ctx.arc(xp(age),yp(row.corpus),5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();}
+  });
+}
+
+// ═══════ TABS ═══════
+function showTab(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
+  setTimeout(()=>{if(name==='retinputs'||name==='dashboard')runProjections();},30);
+}
+
+// ═══════ RESET ═══════
+function confirmReset(){
+  const old=document.getElementById('reset-modal');if(old)old.remove();
+  const m=document.createElement('div');
+  m.id='reset-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 24px;max-width:360px;width:90%;font-family:DM Mono,monospace;">
+    <div style="font-family:DM Serif Display,serif;font-size:16px;color:var(--red);margin-bottom:10px;">Reset to Defaults?</div>
+    <p style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:18px;">All account values, events and parameters will be restored to their original defaults. Any changes will be lost.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('reset-modal').remove()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;">Cancel</button>
+      <button onclick="doReset()" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;font-weight:500;">Reset</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function doReset(){
+  document.getElementById('reset-modal')?.remove();
+  accts=ACCTS.map(r=>({...r}));
+  events=[
+    {age:51,desc:"Chaitra — 11th/12th Education",cost:2,  phase:'pre'},
+    {age:52,desc:"Chaitra — Undergrad Yr 1",     cost:10, phase:'pre'},
+    {age:53,desc:"Chaitra — Undergrad Yr 2",     cost:10, phase:'pre'},
+    {age:54,desc:"Chaitra — Undergrad Yr 3",     cost:10, phase:'pre'},
+    {age:55,desc:"Chaitra — Undergrad Yr 4",     cost:10, phase:'pre'},
+    {age:56,desc:"Chaitra — Grad School Yr 1",   cost:25, phase:'pre'},
+    {age:57,desc:"Chaitra — Grad School Yr 2",   cost:25, phase:'pre'},
+    {age:60,desc:"Medical Emergency",            cost:10, phase:'pre'},
+    {age:65,desc:"House — Gift / Payoff",        cost:250,phase:'post'},
+    {age:70,desc:"Medical Emergency",            cost:15, phase:'post'},
+    {age:80,desc:"Medical Emergency",            cost:20, phase:'post'},
+  ];
+  const defaults={age:40,retAge:60,life:85,inflation:6,retReturn:10,postReturn:6,savings:108.5,annSave:25,saveGrow:6,spend:30,spendFactor:0.75,house:250};
+  const ids={age:'in-age',retAge:'in-ret-age',life:'in-life',inflation:'in-inflation',retReturn:'in-ret-return',postReturn:'in-post-return',savings:'in-savings',annSave:'in-ann-save',saveGrow:'in-save-grow',spend:'in-spend',spendFactor:'in-spend-factor',house:'in-house'};
+  Object.keys(defaults).forEach(k=>{const el=document.getElementById(ids[k]);if(el)el.value=defaults[k];});
+  buildAIRows();buildEventsUI();refreshAll();
+  toast('Reset to defaults');
+}
+
+// ═══════ SAVE STATE / DOWNLOAD JSON ═══════
+function gatherState(){
+  const p=getP();
+  return{
+    version:2,savedAt:new Date().toISOString(),
+    accts:accts.map(r=>({...r})),
+    events:[...events],
+    params:{
+      age:p.age,retAge:p.retAge,life:p.life,
+      inflation:+document.getElementById('in-inflation').value,
+      retReturn:+document.getElementById('in-ret-return').value,
+      postReturn:+document.getElementById('in-post-return').value,
+      savings:p.savings,annSave:p.annSave,
+      saveGrow:+document.getElementById('in-save-grow').value,
+      spend:p.spend,spendFactor:p.spendFact,house:p.house,
+    }
+  };
+}
+function applyState(state){
+  if(state.accts)state.accts.forEach((r,i)=>{if(accts[i]){accts[i].p=r.p;accts[i].s=r.s;accts[i].c=r.c;}});
+  if(state.events)events=state.events;
+  if(state.params){
+    const m=state.params;
+    const ids={age:'in-age',retAge:'in-ret-age',life:'in-life',inflation:'in-inflation',retReturn:'in-ret-return',postReturn:'in-post-return',savings:'in-savings',annSave:'in-ann-save',saveGrow:'in-save-grow',spend:'in-spend',spendFactor:'in-spend-factor',house:'in-house'};
+    Object.keys(ids).forEach(k=>{const el=document.getElementById(ids[k]);if(el&&m[k]!==undefined)el.value=m[k];});
+  }
+  buildAIRows();buildEventsUI();refreshAll();
+}
+function downloadJSON(){
+  // Download the full HTML app
+  const content=document.documentElement.outerHTML;
+  const blob=new Blob([content],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='retirement_planner.html';
+  a.click();toast('Downloaded retirement_planner.html ✓');
+}
+function handleFileLoad(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{const state=JSON.parse(ev.target.result);applyState(state);toast('Loaded ✓');}
+    catch(err){toast('Invalid file: '+err.message,'err');}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ═══════ SAVE TO DRIVE ═══════
+async function saveToDrive(){
+  const btn=document.querySelector('.hbtn-gdrive');
+  const orig=btn.innerHTML;
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.28 3l5.72 9.9-5.67 9.82L.61 12.9zm11.44 0L24 12.9l-5.67 9.82-6.11-10.58zm.72 19.72H5.56L2.56 17h18.88z"/></svg> Saving…';
+  btn.disabled=true;
+  try{
+    const FOLDER_ID='14OQooaWNRO_HYdxjlgf5_fJVzyD1jGDL'; // AI/Finances folder
+    const fileName='retirement_planner.html';
+    // Get the full HTML of this page
+    const content=document.documentElement.outerHTML;
+    const bytes=new TextEncoder().encode(content);
+    let b64raw='';const chunk=8192;
+    for(let i=0;i<bytes.length;i+=chunk){b64raw+=String.fromCharCode(...bytes.subarray(i,i+chunk));}
+    const b64=btoa(b64raw);
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:512,
+        mcp_servers:[{type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'gdrive'}],
+        messages:[{role:'user',content:`Use the Google Drive create_file tool to upload a file with these exact parameters:
+- title: "${fileName}"
+- mimeType: "text/html"
+- parentId: "${FOLDER_ID}"
+- disableConversionToGoogleType: true
+- content (base64): ${b64}
+
+Reply with just the file ID on success, or "ERROR: <reason>" if it fails.`}]
+      })
+    });
+    if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t.slice(0,200)}`);}
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error).slice(0,200));
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+    if(!txt||/^error/i.test(txt))throw new Error(txt||'No response from Drive');
+    toast('Saved to Drive: AI/Finances/'+fileName+' ✓');
+  }catch(err){
+    showErrorModal('Drive Save Failed',err.message);
+  }finally{btn.innerHTML=orig;btn.disabled=false;}
+}
+function showErrorModal(title,message){
+  const old=document.getElementById('err-modal');if(old)old.remove();
+  const m=document.createElement('div');m.id='err-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML=`<div style="background:var(--surface);border:1px solid rgba(247,118,142,.4);border-radius:10px;padding:22px 24px;max-width:460px;width:90%;font-family:DM Mono,monospace;">
+    <div style="font-family:DM Serif Display,serif;font-size:16px;color:var(--red);margin-bottom:10px;">${title}</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:12px;word-break:break-word;">${message}</div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;">You can <strong style="color:var(--text)">Download</strong> the file and upload manually to Drive.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="downloadJSON();document.getElementById('err-modal').remove()" style="background:var(--accent);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;font-weight:500;">⬇ Download Instead</button>
+      <button onclick="document.getElementById('err-modal').remove()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+// ═══════ LOAD FROM EXCEL ═══════
+async function loadXlsxFromDrive(){
+  const btn=document.querySelector('.hbtn-blue');
+  const orig=btn.innerHTML;
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Loading…';
+  btn.disabled=true;
+  try{
+    const FILE_ID='19VOv43t3rAKq0zlyOzC8VJqZUA2LIYdR'; // Financial Accounts.xlsx in AI/Finances
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:3000,
+        mcp_servers:[{type:'url',url:'https://drivemcp.googleapis.com/mcp/v1',name:'gdrive'}],
+        messages:[{role:'user',content:`Use Google Drive read_file_content on file ID "${FILE_ID}". From the Accounts sheet, extract account rows that have institution names and ₹ values for Praneeth, Sushma, Chaitra. Return ONLY a JSON array, no other text:\n[{"inst":"SBI (Bank)","cat":"Cash in Hand","p":0.25,"s":1.0,"c":0},...]\nCategory rules: banks/credit cards/loans = "Cash in Hand", FD/RD deposits = "Short-Term Savings", mutual funds/equity/ULIP = "Long-Term Savings", NPS/EPF/PPF/SSY = "Retirement Savings". Strip ₹ symbols. Negative values for credit card balances and loans are fine.`}]
+      })
+    });
+    if(!resp.ok){const t=await resp.text();throw new Error(`HTTP ${resp.status}: ${t.slice(0,200)}`);}
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error).slice(0,200));
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=txt.match(/\[[\s\S]*\]/);
+    if(!match)throw new Error('Could not parse account data. Response: '+txt.slice(0,300));
+    const parsed=JSON.parse(match[0]);
+    if(!parsed.length)throw new Error('Empty account list returned');
+    applyXlsxAccounts(parsed);
+    toast('Loaded from Financial Accounts.xlsx ✓ ('+parsed.length+' accounts)');
+  }catch(err){
+    showXlsxFallbackModal(err.message);
+  }finally{btn.innerHTML=orig;btn.disabled=false;}
+}
+function applyXlsxAccounts(parsed){
+  parsed.forEach(row=>{
+    const normInst=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const match=accts.find(a=>normInst(a.inst).includes(normInst(row.inst.split(' ')[0]))||
+      normInst(row.inst).includes(normInst(a.inst.split(' ')[0])));
+    if(match){match.p=+(+row.p||0).toFixed(2);match.s=+(+row.s||0).toFixed(2);match.c=+(+row.c||0).toFixed(2);}
+  });
+  buildAIRows();buildEventsUI();refreshAll();
+}
+function showXlsxFallbackModal(errMsg){
+  const old=document.getElementById('xlsx-modal');if(old)old.remove();
+  const m=document.createElement('div');m.id='xlsx-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;';
+  m.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 24px;max-width:460px;width:90%;font-family:DM Mono,monospace;">
+    <div style="font-family:DM Serif Display,serif;font-size:16px;color:var(--accent);margin-bottom:8px;">Load from Excel</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:10px;color:var(--red);margin-bottom:12px;word-break:break-word;">${errMsg}</div>
+    <p style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:14px;">Choose <strong style="color:var(--text)">Financial Accounts.xlsx</strong> from your device instead:</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('xlsx-input').click();document.getElementById('xlsx-modal').remove()" style="background:var(--accent2);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;font-weight:500;">Browse File…</button>
+      <button onclick="document.getElementById('xlsx-modal').remove()" style="background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:6px 14px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;text-transform:uppercase;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function handleXlsxLoad(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      if(!window.XLSX){toast('SheetJS not available — use Drive load','err');return;}
+      const wb=window.XLSX.read(ev.target.result,{type:'array'});
+      const ws=wb.Sheets['Accounts']||wb.Sheets[wb.SheetNames[0]];
+      const rows=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      parseXlsxRows(rows);toast('Loaded from local Excel ✓');
+    }catch(err){toast('Error: '+err.message,'err');}
+    e.target.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+function parseXlsxRows(rows){
+  const CAT_MAP={'bank - checking/savings':'Cash in Hand','bank':'Cash in Hand','deposits - fd, rd':'Short-Term Savings','deposit':'Short-Term Savings','mutual funds':'Long-Term Savings','equity':'Long-Term Savings','life insurance (ulip)':'Long-Term Savings','nps/pf':'Retirement Savings','ssy':'Retirement Savings','ppf':'Retirement Savings','credit cards':'Cash in Hand','others':'Cash in Hand'};
+  let currentCat='Cash in Hand';const parsed=[];
+  rows.forEach(row=>{
+    const t=String(row[1]||'').trim().toLowerCase();
+    const inst=String(row[2]||'').trim();
+    if(t&&CAT_MAP[t])currentCat=CAT_MAP[t];
+    if(!inst||inst.length<2)return;
+    const clean=v=>{const s=String(v||'0').replace(/[₹,\s]/g,'');return parseFloat(s)||0;};
+    const p=clean(row[7]),s=clean(row[8]),c=clean(row[9]);
+    if(p===0&&s===0&&c===0)return;
+    parsed.push({inst,cat:currentCat,p,s,c});
+  });
+  if(parsed.length>0)applyXlsxAccounts(parsed);
+  else toast('No account data found','err');
+}
+
+// ═══════ REFRESH ═══════
+function refreshAll(){buildCatTable();buildFullTable();runProjections();}
+
+// ═══════ INIT ═══════
+buildAIRows();
+buildEventsUI();
+refreshAll();
+window.addEventListener('resize',()=>{
+  const a=document.querySelector('.panel.active');
+  if(a&&(a.id==='tab-retinputs'||a.id==='tab-dashboard'))runProjections();
+});
+</script>
+</body>
+</html>
