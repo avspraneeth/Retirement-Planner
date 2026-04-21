@@ -170,23 +170,21 @@ canvas{display:block;}
 
     <!-- LEFT -->
     <div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:12px;">
-        <div class="kpi gold" style="grid-column:1/-1;">
-          <div class="kpi-lbl">Total Net Worth</div>
-          <div class="kpi-val gold" id="d-total">—</div>
-          <div class="kpi-sub">All categories</div>
-        </div>
-        <div class="kpi blue"><div class="kpi-lbl">Praneeth</div><div class="kpi-val blue" id="d-p">—</div><div class="kpi-sub" id="d-p-pct">—</div></div>
-        <div class="kpi blue"><div class="kpi-lbl">Sushma</div><div class="kpi-val blue" id="d-s">—</div><div class="kpi-sub" id="d-s-pct">—</div></div>
-        <div class="kpi orange"><div class="kpi-lbl">Chaitra</div><div class="kpi-val orange" id="d-c">—</div><div class="kpi-sub" id="d-c-pct">—</div></div>
+      <div class="kpi gold" style="margin-bottom:9px;">
+        <div class="kpi-lbl">Total Net Worth</div>
+        <div class="kpi-val gold" id="d-total">—</div>
+        <div class="kpi-sub">All categories</div>
       </div>
+      <div id="person-kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px;margin-bottom:12px;"></div>
       <div class="section">
         <div class="stitle">Portfolio by Category</div>
-        <table class="nw-table">
-          <thead><tr><th>Category</th><th class="r">Praneeth</th><th class="r">Sushma</th><th class="r">Chaitra</th><th class="r">Total</th></tr></thead>
-          <tbody id="cat-tbody"></tbody>
-          <tfoot><tr class="total-row"><td>Total</td><td class="r" id="cf-p">—</td><td class="r" id="cf-s">—</td><td class="r" id="cf-c">—</td><td class="r" id="cf-t">—</td></tr></tfoot>
-        </table>
+        <div style="overflow-x:auto;">
+          <table class="nw-table">
+            <thead id="cat-thead"></thead>
+            <tbody id="cat-tbody"></tbody>
+            <tfoot id="cat-tfoot"></tfoot>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -198,7 +196,8 @@ canvas{display:block;}
       <div class="kpi orange"><div class="kpi-lbl">Leave-Behind Target</div><div class="kpi-val orange" id="d-leave">—</div><div class="kpi-sub">Today's ₹</div></div>
       <div class="kpi blue"><div class="kpi-lbl">Annual Draw</div><div class="kpi-val blue" id="d-draw">—</div><div class="kpi-sub">Today's ₹</div></div>
       <div class="kpi" id="d-rate-kpi"><div class="kpi-lbl">Draw Rate</div><div class="kpi-val" id="d-draw-rate">—</div><div class="kpi-sub">Safe &lt; 4–5%</div></div>
-      <div class="kpi" id="d-target-kpi" style="grid-column:1/-1;"><div class="kpi-lbl">Leave-Behind Achievable</div><div class="kpi-val" id="d-target">—</div><div class="kpi-sub" id="d-target-sub">—</div></div>
+      <div class="kpi" id="d-target-kpi"><div class="kpi-lbl">Leave-Behind Achievable</div><div class="kpi-val" id="d-target">—</div><div class="kpi-sub" id="d-target-sub">—</div></div>
+      <div class="kpi" id="d-retire-kpi"><div class="kpi-lbl">Retirement Comfortable?</div><div class="kpi-val" id="d-retire">—</div><div class="kpi-sub" id="d-retire-sub">—</div></div>
     </div>
 
   </div>
@@ -206,17 +205,37 @@ canvas{display:block;}
 
 <!-- ══════════════════ ACCOUNT INPUTS ══════════════════ -->
 <div id="tab-accinputs" class="panel">
+  <div class="section" style="margin-bottom:14px;">
+    <div class="stitle">People</div>
+    <div id="persons-ui"></div>
+    <button class="btn-sm mt10" onclick="addPerson()">+ Add Person</button>
+  </div>
   <div class="g2">
     <div class="section">
       <div class="stitle">Cash in Hand (₹ Lakhs)</div>
-      <div class="ai-hdr"><span>Institution</span><span>P</span><span>S</span><span>C</span><span>Total</span></div>
+      <div id="ai-hdr-a" class="ai-hdr"></div>
       <div id="ai-rows-a"></div>
+      <button class="btn-add-cat" onclick="addAcct('Cash in Hand')">+ Add Cash in Hand</button>
     </div>
-    <div class="section">
-      <div class="stitle">Short-Term, Long-Term &amp; Retirement Savings (₹ Lakhs)</div>
-      <div class="ai-hdr"><span>Institution</span><span>P</span><span>S</span><span>C</span><span>Total</span></div>
-      <div id="ai-rows-b"></div>
-      <button class="btn mt12" onclick="recalcAccounts()">Recalculate ↻</button>
+    <div>
+      <div class="section" style="margin-bottom:14px;">
+        <div class="stitle">Short-Term Savings (₹ Lakhs)</div>
+        <div id="ai-hdr-b" class="ai-hdr"></div>
+        <div id="ai-rows-b"></div>
+        <button class="btn-add-cat" onclick="addAcct('Short-Term Savings')">+ Add Short-Term Savings</button>
+      </div>
+      <div class="section" style="margin-bottom:14px;">
+        <div class="stitle">Long-Term Savings (₹ Lakhs)</div>
+        <div id="ai-hdr-c" class="ai-hdr"></div>
+        <div id="ai-rows-c"></div>
+        <button class="btn-add-cat" onclick="addAcct('Long-Term Savings')">+ Add Long-Term Savings</button>
+      </div>
+      <div class="section">
+        <div class="stitle">Retirement Savings (₹ Lakhs)</div>
+        <div id="ai-hdr-d" class="ai-hdr"></div>
+        <div id="ai-rows-d"></div>
+        <button class="btn-add-cat" onclick="addAcct('Retirement Savings')">+ Add Retirement Savings</button>
+      </div>
     </div>
   </div>
 </div>
@@ -252,8 +271,8 @@ canvas{display:block;}
         </div>
       </div>
       <div class="section mt10">
-        <div class="stitle">One-Time Events (today's ₹ L) — at Praneeth's age</div>
-        <div class="ev-hdr"><span>Age (P)</span><span>Description</span><span>Cost ₹L</span><span>Phase</span><span></span></div>
+        <div class="stitle">One-Time Events (today's ₹ L)</div>
+        <div class="ev-hdr"><span>Age</span><span>Description</span><span>Cost ₹L</span><span>Phase</span><span></span></div>
         <div id="ev-rows"></div>
         <button class="btn-sm mt10" onclick="addEvent()">+ Add Event</button>
       </div>
