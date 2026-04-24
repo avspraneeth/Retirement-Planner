@@ -259,9 +259,17 @@ canvas{display:block;}
         <div class="stitle">Savings &amp; Spending</div>
         <div class="r2">
           <div class="field">
-            <label>Current Savings — Retirement Category (₹ L)</label>
-            <input type="number" id="in-savings" value="108.5" step="1" class="hi" onchange="runProjections()">
-            <div class="fnote">Auto-set from Retirement Savings category</div>
+            <label>Starting Corpus — Include Categories</label>
+            <select id="in-savings-scope" onchange="buildCatTable()">
+              <option value="ret">Retirement Savings only</option>
+              <option value="ret+lt">Retirement + Long-Term</option>
+              <option value="ret+lt+st">Retirement + Long-Term + Short-Term</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Starting Corpus (₹ L)</label>
+            <input type="number" id="in-savings" value="0" step="1" class="hi" onchange="runProjections()">
+            <div class="fnote">Auto-set from selected categories above</div>
           </div>
           <div class="field"><label>Annual Savings This Year (₹ L)</label><input type="number" id="in-ann-save" value="0" step="1" onchange="runProjections()"></div>
           <div class="field"><label>Savings Growth Rate (%/yr)</label><input type="number" id="in-save-grow" value="6" step="0.5" onchange="runProjections()"></div>
@@ -459,8 +467,12 @@ function buildCatTable(){
   document.getElementById('cat-tfoot').innerHTML=`<tr class="total-row"><td>Total</td>${persons.map(p=>`<td class="r">${grand[p.id].toFixed(2)}</td>`).join('')}<td class="r">${grandTot.toFixed(2)}</td></tr>`;
   document.getElementById('d-total').textContent=fL(grandTot);
   buildPersonKPIs();
-  const retTot=persons.reduce((s,p)=>s+(tots['Retirement Savings'][p.id]||0),0);
-  document.getElementById('in-savings').value=retTot.toFixed(2);
+  const scope=(document.getElementById('in-savings-scope')||{}).value||'ret';
+  const scopeCats=['Retirement Savings'];
+  if(scope==='ret+lt'||scope==='ret+lt+st')scopeCats.push('Long-Term Savings');
+  if(scope==='ret+lt+st')scopeCats.push('Short-Term Savings');
+  const savingsTot=scopeCats.reduce((s,cat)=>s+persons.reduce((ps,p)=>ps+(tots[cat][p.id]||0),0),0);
+  document.getElementById('in-savings').value=savingsTot.toFixed(2);
 }
 
 // ═══════ EVENTS UI ═══════
